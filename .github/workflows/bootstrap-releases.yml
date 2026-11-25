@@ -1,0 +1,53 @@
+name: Bootstrap historical releases
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/bootstrap-trigger"
+
+permissions:
+  contents: write
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create tags and releases for archived versions
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/release-assets
+          while IFS=$'\t' read -r TAG APK_NAME APK_URL SOURCE_NAME SOURCE_URL NOTES_URL; do
+            [ -n "${TAG:-}" ] || continue
+            if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
+              echo "跳过 $TAG：Release 已存在"
+              continue
+            fi
+            echo "处理 $TAG"
+            if ! gh api "repos/$REPO/git/refs/tags/$TAG" >/dev/null 2>&1; then
+              gh api --method POST "repos/$REPO/git/refs" \
+                -f ref="refs/tags/$TAG" \
+                -f sha="$GITHUB_SHA" >/dev/null
+              echo "已创建 tag $TAG"
+            fi
+            curl -fL --retry 4 --retry-delay 3 --connect-timeout 20 "$APK_URL" -o "/tmp/release-assets/$APK_NAME"
+            curl -fL --retry 4 --retry-delay 3 --connect-timeout 20 "$SOURCE_URL" -o "/tmp/release-assets/$SOURCE_NAME"
+            curl -fL --retry 4 --retry-delay 3 --connect-timeout 20 "$NOTES_URL" -o /tmp/release-assets/NOTES.md
+            unzip -t "/tmp/release-assets/$APK_NAME" >/dev/null
+            unzip -t "/tmp/release-assets/$SOURCE_NAME" >/dev/null
+            test -s /tmp/release-assets/NOTES.md
+            gh release create "$TAG" \
+              --repo "$REPO" \
+              --title "AnTools Harness $TAG" \
+              --notes-file /tmp/release-assets/NOTES.md \
+              "/tmp/release-assets/$APK_NAME#APK" \
+              "/tmp/release-assets/$SOURCE_NAME#SOURCE"
+            echo "已发布 $TAG"
+          done < versions.tsv
