@@ -22,8 +22,13 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
         run: |
-          set -euo pipefail
+          set -uo pipefail
+          FAILED=0
           mkdir -p /tmp/release-assets
+          fetch() {
+            curl -fL --retry 6 --retry-all-errors --retry-delay 5 \
+              --connect-timeout 30 --max-time 180 "$1" -o "$2"
+          }
           while IFS=$'\t' read -r TAG APK_NAME APK_URL SOURCE_NAME SOURCE_URL NOTES_URL; do
             [ -n "${TAG:-}" ] || continue
             if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
@@ -37,17 +42,44 @@ jobs:
                 -f sha="$GITHUB_SHA" >/dev/null
               echo "已创建 tag $TAG"
             fi
-            curl -fL --retry 4 --retry-delay 3 --connect-timeout 20 "$APK_URL" -o "/tmp/release-assets/$APK_NAME"
-            curl -fL --retry 4 --retry-delay 3 --connect-timeout 20 "$SOURCE_URL" -o "/tmp/release-assets/$SOURCE_NAME"
-            curl -fL --retry 4 --retry-delay 3 --connect-timeout 20 "$NOTES_URL" -o /tmp/release-assets/NOTES.md
-            unzip -t "/tmp/release-assets/$APK_NAME" >/dev/null
-            unzip -t "/tmp/release-assets/$SOURCE_NAME" >/dev/null
-            test -s /tmp/release-assets/NOTES.md
-            gh release create "$TAG" \
+            if ! fetch "$APK_URL" "/tmp/release-assets/$APK_NAME"; then
+              echo "::error::下载 APK 失败：$TAG"
+              FAILED=1
+              continue
+            fi
+            if ! fetch "$SOURCE_URL" "/tmp/release-assets/$SOURCE_NAME"; then
+              echo "::error::下载源码失败：$TAG"
+              FAILED=1
+              continue
+            fi
+            if ! fetch "$NOTES_URL" /tmp/release-assets/NOTES.md; then
+              echo "::error::下载交付说明失败：$TAG"
+              FAILED=1
+              continue
+            fi
+            if ! unzip -t "/tmp/release-assets/$APK_NAME" >/dev/null; then
+              echo "::error::APK 校验失败：$TAG"
+              FAILED=1
+              continue
+            fi
+            if ! unzip -t "/tmp/release-assets/$SOURCE_NAME" >/dev/null; then
+              echo "::error::源码 ZIP 校验失败：$TAG"
+              FAILED=1
+              continue
+            fi
+            if ! gh release create "$TAG" \
               --repo "$REPO" \
               --title "AnTools Harness $TAG" \
               --notes-file /tmp/release-assets/NOTES.md \
               "/tmp/release-assets/$APK_NAME#APK" \
-              "/tmp/release-assets/$SOURCE_NAME#SOURCE"
+              "/tmp/release-assets/$SOURCE_NAME#SOURCE"; then
+              echo "::error::创建 Release 失败：$TAG"
+              FAILED=1
+              continue
+            fi
             echo "已发布 $TAG"
           done < versions.tsv
+          if [ "$FAILED" -ne 0 ]; then
+            echo "部分版本发布失败，请查看上方日志" >&2
+            exit 1
+          fi
