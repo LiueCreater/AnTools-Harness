@@ -1,0 +1,70 @@
+name: Release on new tag
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve version from manifest
+        id: meta
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME}"
+          LINE="$(awk -F'\t' -v tag="$TAG" '$1 == tag { print; exit }' versions.tsv)"
+          if [ -z "$LINE" ]; then
+            echo "versions.tsv 中没有 $TAG，无法发布" >&2
+            exit 1
+          fi
+          IFS=$'\t' read -r M_TAG APK_NAME APK_URL SOURCE_NAME SOURCE_URL NOTES_URL <<< "$LINE"
+          {
+            echo "tag=$TAG"
+            echo "title=AnTools Harness $TAG"
+            echo "apk_name=$APK_NAME"
+            echo "apk_url=$APK_URL"
+            echo "source_name=$SOURCE_NAME"
+            echo "source_url=$SOURCE_URL"
+            echo "notes_url=$NOTES_URL"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Download and validate assets
+        env:
+          APK_NAME: ${{ steps.meta.outputs.apk_name }}
+          APK_URL: ${{ steps.meta.outputs.apk_url }}
+          SOURCE_NAME: ${{ steps.meta.outputs.source_name }}
+          SOURCE_URL: ${{ steps.meta.outputs.source_url }}
+          NOTES_URL: ${{ steps.meta.outputs.notes_url }}
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/release-assets
+          curl -fL --retry 4 --retry-delay 3 --connect-timeout 20 "$APK_URL" -o "/tmp/release-assets/$APK_NAME"
+          curl -fL --retry 4 --retry-delay 3 --connect-timeout 20 "$SOURCE_URL" -o "/tmp/release-assets/$SOURCE_NAME"
+          curl -fL --retry 4 --retry-delay 3 --connect-timeout 20 "$NOTES_URL" -o /tmp/release-assets/NOTES.md
+          unzip -t "/tmp/release-assets/$APK_NAME" > /dev/null
+          unzip -t "/tmp/release-assets/$SOURCE_NAME" > /dev/null
+          test -s /tmp/release-assets/NOTES.md
+          ls -lh /tmp/release-assets
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.meta.outputs.tag }}
+          TITLE: ${{ steps.meta.outputs.title }}
+          APK_NAME: ${{ steps.meta.outputs.apk_name }}
+          SOURCE_NAME: ${{ steps.meta.outputs.source_name }}
+        run: |
+          set -euo pipefail
+          gh release create "$TAG" \
+            --title "$TITLE" \
+            --notes-file /tmp/release-assets/NOTES.md \
+            "/tmp/release-assets/$APK_NAME#APK" \
+            "/tmp/release-assets/$SOURCE_NAME#SOURCE"
