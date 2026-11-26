@@ -2,7 +2,9 @@
 
 AnTools Harness 是一个安卓「工具载体」：本体只提供插件运行环境、权限与外观框架，具体功能由插件（ZIP）提供。包名 `com.antools.harness.liue`，minSdk 24 / target 34。
 
-本仓库归档从 `v1demo1` 到 `v1.0demo5fix4` 的全部版本：每个版本一个 tag、一个 Release。Release 正文使用当时的交付说明，附件包含该版本的 **APK** 与 **源码 ZIP**。推送新 tag 时由 GitHub Actions 自动创建 Release。
+本仓库归档从 `v1demo1` 到 `v1.0demo6` 的全部版本：每个版本一个 tag、一个 Release。Release 正文使用当时的交付说明，附件包含该版本的 **APK** 与 **源码 ZIP**。推送新 tag 时由 GitHub Actions 自动创建 Release。
+
+> **外观插件终结版本**：`v1.0demo6` 是最后一个完整支持外部外观插件（`type: appearance`）的版本。后续版本会把外观设置收回宿主端，读取到旧外观插件不会报错，但会在「全部插件」页标注「已弃用」，其渲染外观可能存在不兼容。
 
 ## 版本列表
 
@@ -18,11 +20,13 @@ AnTools Harness 是一个安卓「工具载体」：本体只提供插件运行�
 | `v1.0demo5fix2` | 全模块 SDK、风险权限提醒（versionCode 9） | [下载](https://github.com/LiueCreater/AnTools-Harness/releases/tag/v1.0demo5fix2) |
 | `v1.0demo5fix3` | 二进制原语、Intent 白名单、插件自建管线 | [下载](https://github.com/LiueCreater/AnTools-Harness/releases/tag/v1.0demo5fix3) |
 | `v1.0demo5fix4` | 多选/第三方选文件、分享收件箱 | [下载](https://github.com/LiueCreater/AnTools-Harness/releases/tag/v1.0demo5fix4) |
+| `v1.0demo6` | 主题渲染修复、三种玻璃、连续曲率，最后一个支持外观插件 | [下载](https://github.com/LiueCreater/AnTools-Harness/releases/tag/v1.0demo6) |
 
 说明：
 
 - `v1demo1`、`v1demo3fix1` 是当时实际交付的命名，保留原样，没有改写成 `v1.0demo1` / `v1.0demo3fix1`。
 - `v1.0demo5fix2` 有两次构建（主题颜色 versionCode 8、权限模块 versionCode 9）。这里归档最终版 versionCode 9，交付说明中写明以它为准。
+- `v1.0demo6` 是外观插件最后支持版本；从后续版本开始，外观设置由宿主提供，旧外观插件仅保留兼容读取并标注「已弃用」。
 - 所有 APK 使用同一签名，可直接覆盖升级；源码 ZIP 内**不含** keystore。
 
 ## 安装
@@ -55,9 +59,10 @@ AnTools Harness 是一个安卓「工具载体」：本体只提供插件运行�
 
 ## 插件开发
 
-- 最新插件规范与教程在 `v1.0demo5fix4` 源码 ZIP 的 `docs/` 目录中。
+- 最新插件规范与教程在 `v1.0demo6` 源码 ZIP 的 `docs/` 目录中。
 - 插件包是 ZIP：根目录 `basic.txt`（或 `basis.txt`）+ `README.md` + 入口页；支持图标、权限声明、整合包、分享接收（`accept`）。
 - 插件运行在宿主 WebView 内，所有系统能力经宿主桥按 `permissions` 校验；插件以用户身份运行，安装时会提示风险权限。
+- **外观插件已弃用**：`v1.0demo6` 是最后一个支持外部外观插件的版本；后续版本请使用宿主「外观设置」，不要再新建 `type: appearance` 插件。
 
 ## 从源码构建
 
@@ -65,7 +70,7 @@ AnTools Harness 是一个安卓「工具载体」：本体只提供插件运行�
 
 ```bash
 cd AnToolsHarness
-./build.sh v1.0demo5fix4 11
+./build.sh v1.0demo6 12
 # 产物 build/final.apk
 ```
 
