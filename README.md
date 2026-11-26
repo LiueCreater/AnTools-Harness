@@ -2,7 +2,7 @@
 
 AnTools Harness 是一个安卓「工具载体」：本体只提供插件运行环境、权限与外观框架，具体功能由插件（ZIP）提供。包名 `com.antools.harness.liue`，minSdk 24 / target 34。
 
-本仓库归档从 `v1demo1` 到 `v1.0demo7rebuild1` 的全部版本：每个版本一个 tag、一个 Release。Release 正文使用当时的交付说明，附件包含该版本的 **APK** 与 **源码 ZIP**。推送新 tag 时由 GitHub Actions 自动创建 Release。
+本仓库归档从 `v1demo1` 到 `v1.0demo7rebuild2` 的全部版本：每个版本一个 tag、一个 Release。Release 正文使用当时的交付说明，附件包含该版本的 **APK** 与 **源码 ZIP**。推送新 tag 时由 GitHub Actions 自动创建 Release。
 
 > **外观插件终结版本**：`v1.0demo6` 是最后一个完整支持外部外观插件（`type: appearance`）的版本。`v1.0demo7` 起外观设置收回宿主端，读取旧外观插件不会报错，但会在「全部插件」页标注「已弃用」，其渲染外观可能与新宿主不兼容。
 
@@ -23,6 +23,7 @@ AnTools Harness 是一个安卓「工具载体」：本体只提供插件运行�
 | `v1.0demo6` | 主题渲染修复、三种玻璃、连续曲率，最后一个支持外观插件 | [下载](https://github.com/LiueCreater/AnTools-Harness/releases/tag/v1.0demo6) |
 | `v1.0demo7` | 外观设置收回宿主、背景图/透明度、三色取色、深色灰阶，旧外观插件标弃用 | [下载](https://github.com/LiueCreater/AnTools-Harness/releases/tag/v1.0demo7) |
 | `v1.0demo7rebuild1` | 壁纸改为独立底色+媒体层，0% 完整图片、100% 只剩底色，去掉 20% 遮罩 | [下载](https://github.com/LiueCreater/AnTools-Harness/releases/tag/v1.0demo7rebuild1) |
+| `v1.0demo7rebuild2` | 深浅主题各一套壁纸、竖屏/横屏裁剪、切换主题与横竖屏自动匹配，外观设置改为保存制 | [下载](https://github.com/LiueCreater/AnTools-Harness/releases/tag/v1.0demo7rebuild2) |
 
 说明：
 
@@ -61,7 +62,7 @@ AnTools Harness 是一个安卓「工具载体」：本体只提供插件运行�
 
 ## 插件开发
 
-- 最新插件规范与教程在 `v1.0demo7rebuild1` 源码 ZIP 的 `docs/` 目录中。
+- 最新插件规范与教程在 `v1.0demo7rebuild2` 源码 ZIP 的 `docs/` 目录中。
 - 插件包是 ZIP：根目录 `basic.txt`（或 `basis.txt`）+ `README.md` + 入口页；支持图标、权限声明、整合包、分享接收（`accept`）。
 - 插件运行在宿主 WebView 内，所有系统能力经宿主桥按 `permissions` 校验；插件以用户身份运行，安装时会提示风险权限。
 - **外观插件已弃用**：`v1.0demo6` 是最后一个支持外部外观插件的版本；`v1.0demo7` 起请使用宿主「外观设置」，不要再新建 `type: appearance` 插件。
@@ -72,7 +73,7 @@ AnTools Harness 是一个安卓「工具载体」：本体只提供插件运行�
 
 ```bash
 cd AnToolsHarness
-./build.sh v1.0demo7rebuild1 14
+./build.sh v1.0demo7rebuild2 15
 # 产物 build/final.apk
 ```
 
